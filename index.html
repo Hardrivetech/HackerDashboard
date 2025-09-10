@@ -8,6 +8,9 @@
     <script>
       // Replace with your GitHub OAuth App Client ID (Device Flow). Leave empty to disable login.
       window.GITHUB_CLIENT_ID = "Ov23li5hs0KpF0m6hVbw"; // e.g., "Iv1.0123456789abcdef"
+      // Optional: set GH proxy base that forwards POSTs to GitHub endpoints.
+      // Example: "https://gh-proxy.your-subdomain.workers.dev" (see cloudflare-worker/README.md)
+      window.GH_PROXY = "https://github-oauth-proxy.barokobama1.workers.dev/";
     </script>
     <style>
       :root {

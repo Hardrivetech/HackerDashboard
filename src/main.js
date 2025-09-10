@@ -119,8 +119,14 @@ const app = {
 
     async function loginWithGitHub() {
       const clientId = window.GITHUB_CLIENT_ID || "";
+      const proxyBase = window.GH_PROXY || "";
       if (!clientId) {
         auth.message = "Provide GITHUB_CLIENT_ID in index.html <script>";
+        return;
+      }
+      if (!proxyBase) {
+        auth.message =
+          "GitHub Device Flow requires a same-origin proxy due to CORS. Set window.GH_PROXY to your proxy base.";
         return;
       }
       auth.loading = true;

@@ -18,12 +18,18 @@ export async function fetchGitHubEvents(username, token) {
 }
 
 // Device Flow: https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow
+// Browsers cannot call GitHub device endpoints directly due to CORS. Allow an optional proxy.
+// Set window.GH_PROXY to your proxy base URL (same origin) that forwards POSTs to GitHub.
 export async function startGitHubDeviceLogin(clientId) {
   const params = new URLSearchParams({
     client_id: clientId,
     scope: "read:user repo",
   });
-  const res = await fetch("https://github.com/login/device/code", {
+  const base = (typeof window !== "undefined" && window.GH_PROXY) || "";
+  const endpoint = base
+    ? `${base}/login/device/code`
+    : "https://github.com/login/device/code";
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
@@ -42,9 +48,13 @@ export async function pollGitHubDeviceToken(
     device_code: deviceCode,
     grant_type: "urn:ietf:params:oauth:grant-type:device_code",
   });
+  const base = (typeof window !== "undefined" && window.GH_PROXY) || "";
+  const endpoint = base
+    ? `${base}/login/oauth/access_token`
+    : "https://github.com/login/oauth/access_token";
   while (true) {
     await new Promise((r) => setTimeout(r, intervalSec * 1000));
-    const res = await fetch("https://github.com/login/oauth/access_token", {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
