@@ -3,11 +3,7 @@ import {
   createApp,
   reactive,
 } from "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js";
-import {
-  fetchGitHubEvents,
-  startGitHubDeviceLogin,
-  pollGitHubDeviceToken,
-} from "./services/github.js";
+import { fetchGitHubEvents } from "./services/github.js";
 import { fetchSecurityRSS } from "./services/rss.js";
 import { fetchLatestCVEs } from "./services/cve.js";
 import { fetchCTFTimeEvents } from "./services/ctf.js";
@@ -118,12 +114,7 @@ const app = {
     }
 
     async function loginWithGitHub() {
-      const clientId = window.GITHUB_CLIENT_ID || "";
       const proxyBase = (window.GH_PROXY || "").replace(/\/$/, "");
-      if (!clientId) {
-        auth.message = "Provide GITHUB_CLIENT_ID in index.html <script>";
-        return;
-      }
       if (!proxyBase) {
         auth.message =
           "Set window.GH_PROXY to your Worker URL for OAuth login.";
