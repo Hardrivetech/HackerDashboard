@@ -119,33 +119,60 @@ const app = {
 
     async function loginWithGitHub() {
       const clientId = window.GITHUB_CLIENT_ID || "";
-      const proxyBase = window.GH_PROXY || "";
+      const proxyBase = (window.GH_PROXY || "").replace(/\/$/, "");
       if (!clientId) {
         auth.message = "Provide GITHUB_CLIENT_ID in index.html <script>";
         return;
       }
       if (!proxyBase) {
         auth.message =
-          "GitHub Device Flow requires a same-origin proxy due to CORS. Set window.GH_PROXY to your proxy base.";
+          "Set window.GH_PROXY to your Worker URL for OAuth login.";
         return;
       }
       auth.loading = true;
+      auth.message = "Opening GitHub login…";
+      let popup;
+      const origin = location.origin;
+      function onMsg(e) {
+        // Only accept messages from our site origin (Worker posts back to this origin)
+        if (e.origin !== origin) return;
+        if (e.data?.type === "gh_token") {
+          window.removeEventListener("message", onMsg);
+          if (popup && !popup.closed) popup.close();
+          if (e.data.error) {
+            console.error("OAuth error:", e.data.error);
+            auth.message = "Login failed.";
+            auth.loading = false;
+            return;
+          }
+          const token = e.data.token;
+          if (token) {
+            auth.token = token;
+            localStorage.setItem("qc.gh.token", token);
+            auth.message = "Authenticated with GitHub.";
+            refreshGitHub();
+          } else {
+            auth.message = "Login failed.";
+          }
+          auth.loading = false;
+        }
+      }
+      window.addEventListener("message", onMsg);
       try {
-        const device = await startGitHubDeviceLogin(clientId);
-        auth.message = `Open ${device.verification_uri} and enter code: ${device.user_code}`;
-        const token = await pollGitHubDeviceToken(
-          clientId,
-          device.device_code,
-          device.interval
+        popup = window.open(
+          `${proxyBase}/oauth/start`,
+          "gh_oauth",
+          "width=600,height=700"
         );
-        auth.token = token;
-        localStorage.setItem("qc.gh.token", token);
-        auth.message = "Authenticated with GitHub.";
-        await refreshGitHub();
+        if (!popup) {
+          window.removeEventListener("message", onMsg);
+          auth.message = "Popup blocked. Allow popups and try again.";
+          auth.loading = false;
+        }
       } catch (e) {
         console.error(e);
+        window.removeEventListener("message", onMsg);
         auth.message = "Login failed.";
-      } finally {
         auth.loading = false;
       }
     }

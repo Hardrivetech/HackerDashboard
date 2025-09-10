@@ -6,11 +6,13 @@
     <title>Quantum Collective — Hacker Dashboard</title>
     <!-- Optional: set your GitHub OAuth App client_id here for Device Flow login -->
     <script>
-      // Replace with your GitHub OAuth App Client ID (Device Flow). Leave empty to disable login.
-      window.GITHUB_CLIENT_ID = "Ov23li5hs0KpF0m6hVbw"; // e.g., "Iv1.0123456789abcdef"
-      // Optional: set GH proxy base that forwards POSTs to GitHub endpoints.
-      // Example: "https://gh-proxy.your-subdomain.workers.dev" (see cloudflare-worker/README.md)
-      window.GH_PROXY = "https://github-oauth-proxy.barokobama1.workers.dev/";
+      // Injected at deploy-time by GitHub Actions using repository/environment secrets.
+      // Fallback to empty string if not provided.
+      window.GITHUB_CLIENT_ID =
+        window.GITHUB_CLIENT_ID ||
+        (typeof GITHUB_CLIENT_ID !== "undefined" ? GITHUB_CLIENT_ID : "");
+      window.GH_PROXY =
+        window.GH_PROXY || (typeof GH_PROXY !== "undefined" ? GH_PROXY : "");
     </script>
     <style>
       :root {

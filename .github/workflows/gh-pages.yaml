@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -23,6 +23,15 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      - name: Inject secrets into index.html
+        run: |
+          set -e
+          cp index.html index.html.bak
+          node -e "const fs=require('fs');let html=fs.readFileSync('index.html','utf8');html=html.replace('<script>', '<script>\n  const GITHUB_CLIENT_ID = ' + JSON.stringify(process.env.GITHUB_CLIENT_ID || '') + ';\n  const GH_PROXY = ' + JSON.stringify(process.env.GH_PROXY || '') + ';');fs.writeFileSync('index.html',html);"
+        env:
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GH_PROXY: ${{ secrets.GH_PROXY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
