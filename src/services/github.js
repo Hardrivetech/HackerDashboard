@@ -25,7 +25,8 @@ export async function startGitHubDeviceLogin(clientId) {
     client_id: clientId,
     scope: "read:user repo",
   });
-  const base = (typeof window !== "undefined" && window.GH_PROXY) || "";
+  let base = (typeof window !== "undefined" && window.GH_PROXY) || "";
+  if (base.endsWith("/")) base = base.slice(0, -1);
   const endpoint = base
     ? `${base}/login/device/code`
     : "https://github.com/login/device/code";
@@ -48,7 +49,8 @@ export async function pollGitHubDeviceToken(
     device_code: deviceCode,
     grant_type: "urn:ietf:params:oauth:grant-type:device_code",
   });
-  const base = (typeof window !== "undefined" && window.GH_PROXY) || "";
+  let base = (typeof window !== "undefined" && window.GH_PROXY) || "";
+  if (base.endsWith("/")) base = base.slice(0, -1);
   const endpoint = base
     ? `${base}/login/oauth/access_token`
     : "https://github.com/login/oauth/access_token";
