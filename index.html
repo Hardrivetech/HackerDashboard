@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quantum Collective — Hacker Dashboard</title>
+    <!-- Optional: set your GitHub OAuth App client_id here for Device Flow login -->
+    <script>
+      // Replace with your GitHub OAuth App Client ID (Device Flow). Leave empty to disable login.
+      window.GITHUB_CLIENT_ID = ""; // e.g., "Iv1.0123456789abcdef"
+    </script>
+    <style>
+      :root {
+        --bg: #0b0f10;
+        --card: #0f1416;
+        --text: #d5e2e3;
+        --muted: #9bb1b3;
+        --accent: #00ff88;
+        --accent-2: #39ff14;
+        --danger: #ff4d4d;
+        --warn: #ffd166;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        background: radial-gradient(
+            1200px 600px at 10% -20%,
+            rgba(0, 255, 136, 0.08),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 400px at 90% 120%,
+            rgba(0, 255, 136, 0.06),
+            transparent 60%
+          ),
+          var(--bg);
+        color: var(--text);
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+
+      header {
+        border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+        background: linear-gradient(
+          180deg,
+          rgba(0, 255, 136, 0.05),
+          rgba(0, 0, 0, 0)
+        );
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .brand h1 {
+        font-size: 20px;
+        margin: 0;
+        letter-spacing: 0.5px;
+      }
+      .badge {
+        font-size: 12px;
+        color: var(--bg);
+        background: var(--accent);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(12, 1fr);
+      }
+      .col-12 {
+        grid-column: span 12;
+      }
+      .col-6 {
+        grid-column: span 6;
+      }
+      .col-4 {
+        grid-column: span 4;
+      }
+      .col-3 {
+        grid-column: span 3;
+      }
+      @media (max-width: 1024px) {
+        .col-6,
+        .col-4,
+        .col-3 {
+          grid-column: span 12;
+        }
+      }
+
+      .card {
+        background: linear-gradient(
+          180deg,
+          rgba(0, 255, 136, 0.04),
+          rgba(0, 0, 0, 0)
+        );
+        border: 1px solid rgba(0, 255, 136, 0.18);
+        border-radius: 10px;
+        padding: 14px;
+        box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.05) inset;
+      }
+      .card h2 {
+        margin: 0 0 10px 0;
+        font-size: 16px;
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .list li {
+        padding: 8px 0;
+        border-bottom: 1px dashed rgba(0, 255, 136, 0.15);
+      }
+      .list li:last-child {
+        border-bottom: none;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .input,
+      .button,
+      .select {
+        background: var(--card);
+        color: var(--text);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+        border-radius: 8px;
+        padding: 8px 10px;
+        outline: none;
+      }
+      .button {
+        cursor: pointer;
+      }
+      .button.primary {
+        background: linear-gradient(
+          180deg,
+          rgba(0, 255, 136, 0.2),
+          rgba(0, 255, 136, 0.05)
+        );
+        border-color: var(--accent);
+      }
+      .button.ghost {
+        background: transparent;
+      }
+
+      .terminal {
+        background: #0a0e0f;
+        color: #b8f1c6;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 13px;
+        min-height: 140px;
+        border: 1px solid rgba(0, 255, 136, 0.25);
+      }
+      .terminal .prompt {
+        color: var(--accent-2);
+      }
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(0, 255, 136, 0.25);
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+      }
+
+      footer {
+        color: var(--muted);
+        font-size: 12px;
+        padding: 24px 0;
+        text-align: center;
+      }
+    </style>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script type="module" src="./src/main.js"></script>
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <div class="grid">
+          <div class="col-12">
+            <div class="brand">
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 2L20 6V14L12 22L4 14V6L12 2Z"
+                  stroke="#00ff88"
+                  stroke-width="1.2"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="3.2"
+                  stroke="#00ff88"
+                  stroke-width="1.2"
+                />
+              </svg>
+              <h1>
+                Quantum Collective — Hacker Dashboard
+                <span class="badge">alpha</span>
+              </h1>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container" id="app">
+      <!-- Toolbar -->
+      <div class="grid" style="margin: 14px 0 22px">
+        <div class="col-12 card">
+          <div class="toolbar">
+            <span class="muted">Target GitHub:</span>
+            <input
+              class="input"
+              v-model="settings.githubUser"
+              placeholder="GitHub username"
+              style="width: 200px"
+            />
+            <button class="button" @click="refreshAll">Refresh</button>
+            <span class="muted" style="margin-left: auto">Auth:</span>
+            <button
+              class="button primary"
+              @click="loginWithGitHub"
+              :disabled="auth.loading"
+            >
+              {{ auth.token ? 'Logged in' : 'Login with GitHub' }}
+            </button>
+            <button v-if="auth.token" class="button ghost" @click="logout">
+              Logout
+            </button>
+            <span class="muted" v-if="auth.message">{{ auth.message }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="grid">
+        <!-- GitHub Activity -->
+        <section class="col-6 card">
+          <h2>
+            GitHub Activity — {{ settings.githubUser }}
+            <span class="muted" v-if="loading.github">Loading…</span>
+          </h2>
+          <ul class="list">
+            <li v-for="ev in github.events" :key="ev.id">
+              <div>
+                <strong>{{ ev.type }}</strong>
+                <span class="muted">on</span>
+                <a :href="'https://github.com/' + ev.repo.name" target="_blank"
+                  >{{ ev.repo.name }}</a
+                >
+                <span class="muted"> · {{ formatTime(ev.created_at) }}</span>
+              </div>
+              <div
+                v-if="ev.payload && ev.payload.commits && ev.payload.commits.length"
+                class="muted"
+              >
+                {{ ev.payload.commits[0].message }}
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Security News / RSS -->
+        <section class="col-6 card">
+          <h2>
+            Security News / RSS
+            <span class="muted" v-if="loading.rss">Loading…</span>
+          </h2>
+          <div class="chips" style="margin-bottom: 8px">
+            <span class="chip" v-for="src in rss.sources" :key="src.name"
+              >{{ src.name }}</span
+            >
+          </div>
+          <ul class="list">
+            <li v-for="item in rss.items" :key="item.link">
+              <a :href="item.link" target="_blank">{{ item.title }}</a>
+              <div class="muted">
+                {{ item.source }} · {{ formatTime(item.pubDate) }}
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- CVE / Vulnerabilities -->
+        <section class="col-6 card">
+          <h2>
+            Latest CVEs <span class="muted" v-if="loading.cve">Loading…</span>
+          </h2>
+          <ul class="list">
+            <li v-for="c in cve.items" :key="c.id">
+              <a
+                :href="'https://cve.mitre.org/cgi-bin/cvename.cgi?name=' + c.id"
+                target="_blank"
+                >{{ c.id }}</a
+              >
+              <span class="muted">
+                · {{ c.summary?.slice(0, 120) }}{{ c.summary && c.summary.length
+                > 120 ? '…' : '' }}</span
+              >
+            </li>
+          </ul>
+        </section>
+
+        <!-- CTFTime Events -->
+        <section class="col-6 card">
+          <h2>
+            CTFTime — Upcoming
+            <span class="muted" v-if="loading.ctf">Loading…</span>
+          </h2>
+          <ul class="list">
+            <li v-for="e in ctf.events" :key="e.id">
+              <a :href="e.ctftime_url" target="_blank">{{ e.title }}</a>
+              <div class="muted">
+                {{ formatTime(e.start) }} → {{ formatTime(e.finish) }} · {{
+                e.format }} · {{ e.onsite ? 'Onsite' : 'Online' }}
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Bookmarks / Tools -->
+        <section class="col-6 card">
+          <h2>Bookmarks & Tools</h2>
+          <div class="toolbar" style="margin-bottom: 8px">
+            <input
+              class="input"
+              v-model="bookmark.newTitle"
+              placeholder="Title"
+              style="width: 200px"
+            />
+            <input
+              class="input"
+              v-model="bookmark.newUrl"
+              placeholder="https://"
+              style="width: 320px"
+            />
+            <button class="button" @click="addBookmark">Add</button>
+          </div>
+          <ul class="list">
+            <li v-for="(b, i) in bookmark.items" :key="b.url">
+              <a :href="b.url" target="_blank">{{ b.title }}</a>
+              <button
+                class="button ghost"
+                style="float: right"
+                @click="removeBookmark(i)"
+              >
+                Remove
+              </button>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Terminal Notes -->
+        <section class="col-6 card">
+          <h2>Notes (Terminal)</h2>
+          <div
+            class="terminal"
+            contenteditable="true"
+            @input="onNotesInput"
+            v-html="notes"
+          ></div>
+          <div class="muted" style="margin-top: 6px">
+            Auto-saved to this browser (localStorage).
+          </div>
+        </section>
+      </div>
+
+      <footer>
+        Built for Quantum Collective by @QuantumByte · Theme: neon-dark · Data
+        via public APIs/proxies · CORS-safe
+      </footer>
+    </main>
+  </body>
+</html>
