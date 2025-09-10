@@ -3,6 +3,7 @@ import {
   createApp,
   reactive,
   computed,
+  ref,
 } from "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js";
 import { fetchGitHubEvents } from "./services/github.js";
 import { fetchSecurityRSS } from "./services/rss.js";
@@ -57,6 +58,7 @@ const app = {
             ],
       newSourceName: "",
       newSourceUrl: "",
+      selectedIndex: "",
     });
     const cve = reactive({ items: [] });
     const ctf = reactive({ events: [] });
@@ -113,6 +115,9 @@ const app = {
       if (!arr.length) delete cveState.tags[id];
       saveCveState();
     }
+
+    // Per-CVE tag input values for the UI
+    const tagInputs = reactive({});
 
     // Filters for CVE triage
     const defaultCveFilters = {
@@ -619,6 +624,7 @@ const app = {
       // other
       bookmark,
       notes,
+      tagInputs,
       globalSearch,
       globalResults,
       gist,

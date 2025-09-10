@@ -370,7 +370,7 @@
             />
             <button class="button" @click="addRssSource">Add Source</button>
             <span class="muted" style="margin-left: auto">Manage:</span>
-            <select class="select" v-model.number="_rssIdx" @change="">
+            <select class="select" v-model.number="rss.selectedIndex">
               <option disabled value="">Select source…</option>
               <option v-for="(s,i) in rss.sources" :value="i">
                 {{ s.name }}
@@ -378,8 +378,8 @@
             </select>
             <button
               class="button ghost"
-              @click="removeRssSource(_rssIdx)"
-              :disabled="_rssIdx==null || _rssIdx===''"
+              @click="removeRssSource(rss.selectedIndex)"
+              :disabled="rss.selectedIndex==null || rss.selectedIndex===''"
             >
               Remove
             </button>
@@ -547,12 +547,12 @@
                 <input
                   class="input"
                   placeholder="Add tag"
-                  v-model="_tag"
+                  v-model="tagInputs[c.id]"
                   style="width: 160px"
                 />
                 <button
                   class="button"
-                  @click="addTagToCve(c.id, _tag); _tag=''"
+                  @click="addTagToCve(c.id, tagInputs[c.id]); tagInputs[c.id]=''"
                 >
                   Add
                 </button>
