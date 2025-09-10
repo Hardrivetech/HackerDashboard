@@ -32,10 +32,16 @@ export async function startGitHubDeviceLogin(clientId) {
     : "https://github.com/login/device/code";
   const res = await fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
     body: params.toString(),
   });
-  if (!res.ok) throw new Error("Device code request failed");
+  if (!res.ok) {
+    const errTxt = await res.text().catch(() => "");
+    throw new Error(`Device code request failed (${res.status}): ${errTxt}`);
+  }
   return res.json(); // { device_code, user_code, verification_uri, interval }
 }
 
