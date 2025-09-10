@@ -114,19 +114,32 @@ const app = {
     }
 
     async function loginWithGitHub() {
-      const proxyBase = (window.GH_PROXY || "").replace(/\/$/, "");
-      if (!proxyBase) {
+      // Normalize GH_PROXY to absolute https URL and remove trailing slashes
+      let raw = (window.GH_PROXY || "").trim();
+      if (!raw) {
         auth.message =
           "Set window.GH_PROXY to your Worker URL for OAuth login.";
         return;
       }
+      if (!/^https?:\/\//i.test(raw)) {
+        raw = "https://" + raw;
+      }
+      const proxyBase = raw.replace(/\/+$/, "");
+
       auth.loading = true;
       auth.message = "Opening GitHub login…";
       let popup;
-      const origin = location.origin;
+      const workerOrigin = (() => {
+        try {
+          return new URL(proxyBase).origin;
+        } catch {
+          return "";
+        }
+      })();
+
       function onMsg(e) {
-        // Only accept messages from our site origin (Worker posts back to this origin)
-        if (e.origin !== origin) return;
+        // Only accept messages from the Worker origin
+        if (!workerOrigin || e.origin !== workerOrigin) return;
         if (e.data?.type === "gh_token") {
           window.removeEventListener("message", onMsg);
           if (popup && !popup.closed) popup.close();
@@ -150,11 +163,8 @@ const app = {
       }
       window.addEventListener("message", onMsg);
       try {
-        popup = window.open(
-          `${proxyBase}/oauth/start`,
-          "gh_oauth",
-          "width=600,height=700"
-        );
+        const startUrl = `${proxyBase}/oauth/start`;
+        popup = window.open(startUrl, "gh_oauth", "width=600,height=700");
         if (!popup) {
           window.removeEventListener("message", onMsg);
           auth.message = "Popup blocked. Allow popups and try again.";
