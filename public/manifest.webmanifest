@@ -1,0 +1,9 @@
+{
+  "name": "Hacker Dashboard",
+  "short_name": "HackerDash",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b0f10",
+  "theme_color": "#00ff88",
+  "icons": []
+}

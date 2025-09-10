@@ -14,6 +14,16 @@
       window.GH_PROXY =
         window.GH_PROXY || (typeof GH_PROXY !== "undefined" ? GH_PROXY : "");
     </script>
+    <link rel="manifest" href="./public/manifest.webmanifest" />
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("./public/sw.js")
+            .catch(console.error);
+        });
+      }
+    </script>
     <style>
       :root {
         --bg: #0b0f10;
@@ -266,7 +276,14 @@
               style="width: 200px"
             />
             <button class="button" @click="refreshAll">Refresh</button>
-            <span class="muted" style="margin-left: auto">Auth:</span>
+            <span class="muted" style="margin-left: auto">Search:</span>
+            <input
+              class="input"
+              v-model="globalSearch.query"
+              placeholder="Search everything…"
+              style="width: 260px"
+            />
+            <span class="muted">Auth:</span>
             <button
               class="button primary"
               @click="loginWithGitHub"
@@ -278,6 +295,23 @@
               Logout
             </button>
             <span class="muted" v-if="auth.message">{{ auth.message }}</span>
+          </div>
+          <div
+            class="toolbar"
+            v-if="globalSearch.query"
+            style="margin-top: 8px"
+          >
+            <span class="muted">Results:</span>
+            <div class="chips" style="gap: 10px">
+              <a
+                class="chip"
+                v-for="(r,ri) in globalResults"
+                :key="ri"
+                :href="r.url"
+                target="_blank"
+                >{{ r.type }}: {{ r.title }}</a
+              >
+            </div>
           </div>
         </div>
       </div>
@@ -320,6 +354,35 @@
             <span class="chip" v-for="src in rss.sources" :key="src.name"
               >{{ src.name }}</span
             >
+          </div>
+          <div class="toolbar" style="margin-bottom: 8px">
+            <input
+              class="input"
+              v-model="rss.newSourceName"
+              placeholder="Source name"
+              style="width: 180px"
+            />
+            <input
+              class="input"
+              v-model="rss.newSourceUrl"
+              placeholder="https://feed-url"
+              style="width: 320px"
+            />
+            <button class="button" @click="addRssSource">Add Source</button>
+            <span class="muted" style="margin-left: auto">Manage:</span>
+            <select class="select" v-model.number="_rssIdx" @change="">
+              <option disabled value="">Select source…</option>
+              <option v-for="(s,i) in rss.sources" :value="i">
+                {{ s.name }}
+              </option>
+            </select>
+            <button
+              class="button ghost"
+              @click="removeRssSource(_rssIdx)"
+              :disabled="_rssIdx==null || _rssIdx===''"
+            >
+              Remove
+            </button>
           </div>
           <ul class="list">
             <li v-for="item in rss.items" :key="item.link">
@@ -454,6 +517,15 @@
                   >EPSS: {{ (c.epss*100).toFixed(1) }}%</span
                 >
                 <span class="muted"> · {{ formatTime(c.published) }}</span>
+                <div style="float: right">
+                  <button class="button ghost" @click="togglePinCve(c.id)">
+                    {{ cveState.pinned.includes(c.id) ? 'Unpin' : 'Pin' }}
+                  </button>
+                  <button class="button ghost" @click="toggleIgnoreCve(c.id)">
+                    {{ cveState.ignored.includes(c.id) ? 'Unignore' : 'Ignore'
+                    }}
+                  </button>
+                </div>
               </div>
               <div class="muted" style="margin-top: 4px">
                 {{ c.summary?.slice(0, 160) }}{{ c.summary && c.summary.length >
@@ -470,6 +542,38 @@
                   :key="p+pi"
                   >{{ p }}</span
                 >
+              </div>
+              <div class="toolbar" style="margin-top: 6px">
+                <input
+                  class="input"
+                  placeholder="Add tag"
+                  v-model="_tag"
+                  style="width: 160px"
+                />
+                <button
+                  class="button"
+                  @click="addTagToCve(c.id, _tag); _tag=''"
+                >
+                  Add
+                </button>
+                <div
+                  class="chips"
+                  v-if="cveState.tags[c.id] && cveState.tags[c.id].length"
+                >
+                  <span
+                    class="chip"
+                    v-for="(t,ti) in cveState.tags[c.id]"
+                    :key="t+ti"
+                  >
+                    {{ t }}
+                    <a
+                      href="#"
+                      @click.prevent="removeTagFromCve(c.id, t)"
+                      style="margin-left: 6px"
+                      >✕</a
+                    >
+                  </span>
+                </div>
               </div>
             </li>
           </ul>
@@ -494,7 +598,7 @@
 
         <!-- Bookmarks / Tools -->
         <section class="col-6 card">
-          <h2>Bookmarks & Tools</h2>
+          <h2>Bookmarks, Notes & Sync</h2>
           <div class="toolbar" style="margin-bottom: 8px">
             <input
               class="input"
@@ -509,6 +613,25 @@
               style="width: 320px"
             />
             <button class="button" @click="addBookmark">Add</button>
+            <span class="muted" style="margin-left: auto">Gist ID:</span>
+            <input
+              class="input"
+              v-model="gist.id"
+              placeholder="optional"
+              style="width: 220px"
+              @change="localStorage.setItem('qc.gist.id', gist.id)"
+            />
+            <button class="button" @click="saveToGist" :disabled="gist.loading">
+              Save → Gist
+            </button>
+            <button
+              class="button ghost"
+              @click="loadFromGist"
+              :disabled="gist.loading || !gist.id"
+            >
+              Load ← Gist
+            </button>
+            <span class="muted" v-if="gist.message">{{ gist.message }}</span>
           </div>
           <ul class="list">
             <li v-for="(b, i) in bookmark.items" :key="b.url">
