@@ -2,6 +2,7 @@
 import {
   createApp,
   reactive,
+  computed,
 } from "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js";
 import { fetchGitHubEvents } from "./services/github.js";
 import { fetchSecurityRSS } from "./services/rss.js";
@@ -38,6 +39,125 @@ const app = {
     });
     const cve = reactive({ items: [] });
     const ctf = reactive({ events: [] });
+
+    // Filters for CVE triage
+    const defaultCveFilters = {
+      vendor: "",
+      product: "",
+      minCvss: 0,
+      maxCvss: 10,
+      onlyKEV: false,
+      minEPSS: 0,
+      days: 30, // 0 means any time
+      sortKey: "epss", // epss | cvss | published | kev
+      sortDir: "desc", // asc | desc
+    };
+    const savedCveFilters = (() => {
+      try {
+        return (
+          JSON.parse(localStorage.getItem("qc.cve.filters") || "null") || {}
+        );
+      } catch {
+        return {};
+      }
+    })();
+    const cveFilters = reactive({ ...defaultCveFilters, ...savedCveFilters });
+
+    function saveCveFilters() {
+      try {
+        localStorage.setItem("qc.cve.filters", JSON.stringify(cveFilters));
+      } catch {}
+    }
+
+    function resetCveFilters() {
+      Object.assign(cveFilters, defaultCveFilters);
+      saveCveFilters();
+    }
+
+    function quickKEV() {
+      cveFilters.onlyKEV = true;
+      saveCveFilters();
+    }
+    function quickHighEPSS() {
+      cveFilters.minEPSS = 0.5;
+      cveFilters.sortKey = "epss";
+      cveFilters.sortDir = "desc";
+      saveCveFilters();
+    }
+    function quickHighCVSS() {
+      cveFilters.minCvss = 9;
+      cveFilters.sortKey = "cvss";
+      cveFilters.sortDir = "desc";
+      saveCveFilters();
+    }
+    function quickRecent7() {
+      cveFilters.days = 7;
+      cveFilters.sortKey = "published";
+      cveFilters.sortDir = "desc";
+      saveCveFilters();
+    }
+
+    const cveView = computed(() => {
+      let arr = Array.isArray(cve.items) ? [...cve.items] : [];
+
+      // Filters
+      const v = (cveFilters.vendor || "").toLowerCase();
+      const p = (cveFilters.product || "").toLowerCase();
+      if (v)
+        arr = arr.filter((it) =>
+          (it.products || []).some((s) => s.toLowerCase().includes(v))
+        );
+      if (p)
+        arr = arr.filter((it) =>
+          (it.products || []).some((s) => s.toLowerCase().includes(p))
+        );
+
+      if (typeof cveFilters.minCvss === "number")
+        arr = arr.filter(
+          (it) => it.cvss == null || it.cvss >= cveFilters.minCvss
+        );
+      if (typeof cveFilters.maxCvss === "number")
+        arr = arr.filter(
+          (it) => it.cvss == null || it.cvss <= cveFilters.maxCvss
+        );
+
+      if (cveFilters.onlyKEV) arr = arr.filter((it) => it.kev);
+
+      if (typeof cveFilters.minEPSS === "number")
+        arr = arr.filter(
+          (it) => it.epss == null || it.epss >= cveFilters.minEPSS
+        );
+
+      const days = Number(cveFilters.days || 0);
+      if (days > 0)
+        arr = arr.filter((it) => {
+          if (!it.published) return true;
+          const d = new Date(it.published);
+          if (isNaN(d)) return true;
+          const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+          return diff <= days;
+        });
+
+      // Sort
+      const key = cveFilters.sortKey;
+      const dir = cveFilters.sortDir === "asc" ? 1 : -1;
+      const val = (it) => {
+        if (key === "kev") return it.kev ? 1 : 0;
+        if (key === "published")
+          return new Date(it.published || 0).getTime() || 0;
+        return it[key] ?? -Infinity; // epss, cvss
+      };
+      arr.sort((a, b) => {
+        const va = val(a);
+        const vb = val(b);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        return va === vb ? 0 : va > vb ? dir : -dir;
+      });
+
+      return arr;
+    });
 
     // Bookmarks
     const bookmark = reactive({
@@ -215,6 +335,16 @@ const app = {
       rss,
       cve,
       ctf,
+      // CVE filters and view
+      cveFilters,
+      cveView,
+      saveCveFilters,
+      resetCveFilters,
+      quickKEV,
+      quickHighEPSS,
+      quickHighCVSS,
+      quickRecent7,
+      // other
       bookmark,
       notes,
       refreshAll,

@@ -336,17 +336,141 @@
           <h2>
             Latest CVEs <span class="muted" v-if="loading.cve">Loading…</span>
           </h2>
+
+          <!-- Filters -->
+          <div class="toolbar" style="margin-bottom: 8px">
+            <input
+              class="input"
+              placeholder="Vendor"
+              v-model="cveFilters.vendor"
+              @change="saveCveFilters"
+              style="width: 140px"
+            />
+            <input
+              class="input"
+              placeholder="Product"
+              v-model="cveFilters.product"
+              @change="saveCveFilters"
+              style="width: 140px"
+            />
+            <input
+              class="input"
+              type="number"
+              step="0.1"
+              min="0"
+              max="10"
+              v-model.number="cveFilters.minCvss"
+              @change="saveCveFilters"
+              placeholder="Min CVSS"
+              style="width: 110px"
+            />
+            <input
+              class="input"
+              type="number"
+              step="0.01"
+              min="0"
+              max="1"
+              v-model.number="cveFilters.minEPSS"
+              @change="saveCveFilters"
+              placeholder="Min EPSS"
+              style="width: 110px"
+            />
+            <input
+              class="input"
+              type="number"
+              min="0"
+              v-model.number="cveFilters.days"
+              @change="saveCveFilters"
+              placeholder="Days"
+              style="width: 90px"
+            />
+            <label style="display: flex; align-items: center; gap: 6px">
+              <input
+                type="checkbox"
+                v-model="cveFilters.onlyKEV"
+                @change="saveCveFilters"
+              />
+              <span class="muted">KEV only</span>
+            </label>
+          </div>
+          <div class="toolbar" style="margin-bottom: 10px">
+            <select
+              class="select"
+              v-model="cveFilters.sortKey"
+              @change="saveCveFilters"
+            >
+              <option value="epss">Sort: EPSS</option>
+              <option value="cvss">Sort: CVSS</option>
+              <option value="published">Sort: Published</option>
+              <option value="kev">Sort: KEV</option>
+            </select>
+            <select
+              class="select"
+              v-model="cveFilters.sortDir"
+              @change="saveCveFilters"
+            >
+              <option value="desc">Desc</option>
+              <option value="asc">Asc</option>
+            </select>
+            <button class="button" @click="resetCveFilters">Reset</button>
+            <div class="chips" style="margin-left: auto">
+              <button class="button ghost" @click="quickKEV">KEV</button>
+              <button class="button ghost" @click="quickHighEPSS">
+                EPSS≥0.5
+              </button>
+              <button class="button ghost" @click="quickHighCVSS">
+                CVSS≥9
+              </button>
+              <button class="button ghost" @click="quickRecent7">
+                Recent 7d
+              </button>
+            </div>
+          </div>
+
+          <!-- Results -->
           <ul class="list">
-            <li v-for="c in cve.items" :key="c.id">
-              <a
-                :href="'https://cve.mitre.org/cgi-bin/cvename.cgi?name=' + c.id"
-                target="_blank"
-                >{{ c.id }}</a
+            <li v-for="c in cveView" :key="c.id">
+              <div>
+                <a
+                  :href="'https://cve.mitre.org/cgi-bin/cvename.cgi?name=' + c.id"
+                  target="_blank"
+                  >{{ c.id }}</a
+                >
+                <span
+                  class="chip"
+                  v-if="c.kev"
+                  style="
+                    margin-left: 6px;
+                    background: rgba(255, 77, 77, 0.15);
+                    border-color: rgba(255, 77, 77, 0.5);
+                    color: #ff8080;
+                  "
+                  >KEV</span
+                >
+                <span class="chip" v-if="c.cvss!=null"
+                  >CVSS: {{ c.cvss.toFixed(1) }}</span
+                >
+                <span class="chip" v-if="c.epss!=null"
+                  >EPSS: {{ (c.epss*100).toFixed(1) }}%</span
+                >
+                <span class="muted"> · {{ formatTime(c.published) }}</span>
+              </div>
+              <div class="muted" style="margin-top: 4px">
+                {{ c.summary?.slice(0, 160) }}{{ c.summary && c.summary.length >
+                160 ? '…' : '' }}
+              </div>
+              <div
+                class="chips"
+                v-if="c.products && c.products.length"
+                style="margin-top: 6px"
               >
-              <span class="muted">
-                · {{ c.summary?.slice(0, 120) }}{{ c.summary && c.summary.length
-                > 120 ? '…' : '' }}</span
-              >
+                <span
+                  class="chip"
+                  v-for="(p, pi) in c.products.slice(0, 4)"
+                  :key="p+pi"
+                  >{{ p }}</span
+                >
+              </div>
             </li>
           </ul>
         </section>
